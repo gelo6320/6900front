@@ -178,6 +178,7 @@
   <script>
     const sampleWord = "hello"; // Word to detect
     const ws = new WebSocket("wss://backend-2ucw.onrender.com");
+    const updatesContainer = document.getElementById("live-updates");
 
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
@@ -213,21 +214,37 @@
     recognition.continuous = true;
 
     recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      if (transcript.includes(sampleWord.toLowerCase())) {
-        console.log(`Detected sample word: ${transcript}`);
+      const transcript = event.results[event.results.length - 1][0].transcript.trim();
+      addUpdate(`🎤 Heard: ${transcript}`); // Add live updates for microphone input
+
+      if (transcript.toLowerCase().includes(sampleWord.toLowerCase())) {
+        addUpdate(`✅ Detected sample word: "${sampleWord}"`);
         ws.send(JSON.stringify({ word: transcript }));
       }
     };
 
+    recognition.onerror = (event) => {
+      addUpdate(`❌ Error: ${event.error}`);
+    };
+
     function startListening() {
       recognition.start();
-      console.log("Started listening for words...");
+      addUpdate("🟢 Listening started...");
     }
 
     function stopListening() {
       recognition.stop();
-      console.log("Stopped listening.");
+      addUpdate("🔴 Listening stopped.");
+    }
+
+    // Function to add updates to the live updates section
+    function addUpdate(message) {
+      const update = document.createElement("p");
+      update.textContent = message;
+      updatesContainer.appendChild(update);
+
+      // Scroll to the bottom of the live updates container
+      updatesContainer.scrollTop = updatesContainer.scrollHeight;
     }
   </script>
 </body>
