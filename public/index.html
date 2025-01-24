@@ -4,31 +4,173 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Word Detector</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: #4caf50;
+      text-align: center;
+    }
+
+    #status {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      color: #bbbbbb;
+      text-align: center;
+      transition: color 0.3s;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+
+    .btn.start {
+      background-color: #4caf50;
+      color: white;
+    }
+
+    .btn.stop {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .btn:hover {
+      transform: scale(1.1);
+    }
+
+    .live-updates {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      width: 250px;
+      max-height: 90%;
+      overflow-y: auto;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: #1e1e1e;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .live-updates h2 {
+      font-size: 1.2rem;
+      margin: 0 0 10px 0;
+      color: #4caf50;
+    }
+
+    .live-updates p {
+      margin: 5px 0;
+      padding: 5px;
+      border-radius: 5px;
+      background-color: #333;
+      color: #bbbbbb;
+      font-size: 0.9rem;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .live-updates {
+        position: static;
+        width: 90%;
+        max-height: 200px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Listening for Words</h1>
-  <p id="status">Initializing microphone...</p>
+  <h1>Word Detector</h1>
+  <p id="status">Click "Start Listening" to begin.</p>
+
+  <div class="controls">
+    <button class="btn start" onclick="startListening()">Start Listening</button>
+    <button class="btn stop" onclick="stopListening()">Stop Listening</button>
+  </div>
+
+  <div class="live-updates" id="live-updates">
+    <h2>Live Updates</h2>
+    <!-- Updates will appear here -->
+  </div>
+
   <script>
-    const sampleWord = "example"; // Replace this with your target word
+    const sampleWord = "example"; // Replace with your target word
     const ws = new WebSocket("https://six900back.onrender.com");
 
-    // Set up microphone and speech recognition
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
     recognition.continuous = true;
 
-    recognition.onstart = () => (document.getElementById("status").textContent = "Listening...");
+    const statusElement = document.getElementById("status");
+    const updatesContainer = document.getElementById("live-updates");
+
+    recognition.onstart = () => (statusElement.textContent = "Listening...");
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      document.getElementById("status").textContent = `Heard: ${transcript}`;
+      addUpdate(`Heard: ${transcript}`);
       if (transcript.includes(sampleWord)) {
         ws.send(JSON.stringify({ word: transcript }));
-        recognition.stop();
+        addUpdate(`✅ Target word detected: ${transcript}`);
       }
     };
 
-    recognition.onerror = () => (document.getElementById("status").textContent = "Error listening");
-    recognition.start();
+    recognition.onerror = (event) => {
+      statusElement.textContent = `Error: ${event.error}`;
+      addUpdate(`❌ Error: ${event.error}`);
+    };
+
+    function startListening() {
+      recognition.start();
+      statusElement.textContent = "Listening...";
+      statusElement.style.color = "#4caf50";
+    }
+
+    function stopListening() {
+      recognition.stop();
+      statusElement.textContent = "Stopped listening.";
+      statusElement.style.color = "#f44336";
+    }
+
+    function addUpdate(message) {
+      const newUpdate = document.createElement("p");
+      newUpdate.textContent = message;
+      updatesContainer.appendChild(newUpdate);
+      updatesContainer.scrollTop = updatesContainer.scrollHeight; // Auto-scroll to the latest update
+    }
   </script>
 </body>
 </html>
