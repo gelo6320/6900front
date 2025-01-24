@@ -181,43 +181,78 @@
     const updatesContainer = document.getElementById("live-updates");
   
     ws.onmessage = async (event) => {
-      const data = JSON.parse(event.data);
-  
-      if (data.action === "fillForm" && data.url) {
-        console.log(`Redirecting to: ${data.url}`);
-        window.location.href = data.url; // Redirect to the form URL
-  
-        // Wait for the page to load
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-  
-        // Fill the form fields
-        if (data.fields) {
-          const { name, ticker, description } = data.fields;
-  
-          // Fill in the name field
-          const nameField = document.querySelector("input#name");
-          if (nameField) {
-            nameField.value = name; // Set the value
-            nameField.dispatchEvent(new Event("input", { bubbles: true })); // Trigger any attached event listeners
-            console.log("Name field filled:", name);
-          }
-  
-          // Fill in the ticker and description fields (ensure you replace these selectors if necessary)
-          const tickerField = document.querySelector("#ticker");
-          const descriptionField = document.querySelector("#description");
-          if (tickerField) {
-            tickerField.value = ticker;
-            tickerField.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-          if (descriptionField) {
-            descriptionField.value = description;
-            descriptionField.dispatchEvent(new Event("input", { bubbles: true }));
-          }
-  
-          console.log("Form fields filled:", data.fields);
-        }
+  const data = JSON.parse(event.data);
+
+  if (data.action === "fillForm" && data.url) {
+    console.log(`Redirecting to: ${data.url}`);
+    window.location.href = data.url; // Redirect to the form URL
+
+    // Wait for the page to load (adjust timing if necessary)
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    // Fill in the form fields
+    if (data.fields) {
+      const { name, ticker, description } = data.fields;
+
+      // Fill in the "name" field
+      const nameField = document.querySelector("input#name");
+      if (nameField) {
+        nameField.value = name;
+        nameField.dispatchEvent(new Event("input", { bubbles: true })); // Trigger event listeners
+        console.log("Name field filled:", name);
+      } else {
+        console.error("Name field not found!");
       }
-    };
+
+      // Fill in the "ticker" field
+      const tickerField = document.querySelector("input#ticker");
+      if (tickerField) {
+        tickerField.value = ticker;
+        tickerField.dispatchEvent(new Event("input", { bubbles: true }));
+        console.log("Ticker field filled:", ticker);
+      } else {
+        console.error("Ticker field not found!");
+      }
+
+      // Fill in the "description" field
+      const descriptionField = document.querySelector("textarea#description");
+      if (descriptionField) {
+        descriptionField.value = description;
+        descriptionField.dispatchEvent(new Event("input", { bubbles: true }));
+        console.log("Description field filled:", description);
+      } else {
+        console.error("Description field not found!");
+      }
+    }
+
+    // Handle image upload
+    const uploadInput = document.querySelector("input[type='file']");
+    if (uploadInput && data.imagePath) {
+      try {
+        const blob = await fetch(data.imagePath).then((r) => r.blob());
+        const file = new File([blob], "coin_image.png", { type: blob.type });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        uploadInput.files = dataTransfer.files;
+        console.log("Image uploaded successfully!");
+      } catch (error) {
+        console.error("Image upload failed:", error);
+      }
+    } else {
+      console.error("Image input not found or imagePath missing!");
+    }
+
+    // Click the "Create Coin" button
+    const createButton = document.querySelector("button#create-coin");
+    if (createButton) {
+      createButton.click();
+      console.log("Create Coin button clicked!");
+    } else {
+      console.error("Create Coin button not found!");
+    }
+  }
+};
   
     // Speech Recognition setup
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
