@@ -179,70 +179,81 @@
     const sampleWord = "hello"; // Word to detect
     const ws = new WebSocket("wss://backend-2ucw.onrender.com");
     const updatesContainer = document.getElementById("live-updates");
-
+  
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
-
+  
       if (data.action === "fillForm" && data.url) {
-        console.log(`Navigating to: ${data.url}`);
-        window.location.href = data.url; // Navigate to the form URL
-
+        console.log(`Redirecting to: ${data.url}`);
+        window.location.href = data.url; // Redirect to the form URL
+  
         // Wait for the page to load
         await new Promise((resolve) => setTimeout(resolve, 3000));
-
+  
         // Fill the form fields
         if (data.fields) {
           const { name, ticker, description } = data.fields;
-
-          // Type in the fields if they exist
-          const nameField = document.querySelector("#name");
+  
+          // Fill in the name field
+          const nameField = document.querySelector("input#name");
+          if (nameField) {
+            nameField.value = name; // Set the value
+            nameField.dispatchEvent(new Event("input", { bubbles: true })); // Trigger any attached event listeners
+            console.log("Name field filled:", name);
+          }
+  
+          // Fill in the ticker and description fields (ensure you replace these selectors if necessary)
           const tickerField = document.querySelector("#ticker");
           const descriptionField = document.querySelector("#description");
-
-          if (nameField) nameField.value = name;
-          if (tickerField) tickerField.value = ticker;
-          if (descriptionField) descriptionField.value = description;
-
-          console.log("Form filled with:", data.fields);
+          if (tickerField) {
+            tickerField.value = ticker;
+            tickerField.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          if (descriptionField) {
+            descriptionField.value = description;
+            descriptionField.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+  
+          console.log("Form fields filled:", data.fields);
         }
       }
     };
-
+  
     // Speech Recognition setup
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
     recognition.continuous = true;
-
+  
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim();
       addUpdate(`🎤 Heard: ${transcript}`); // Add live updates for microphone input
-
+  
       if (transcript.toLowerCase().includes(sampleWord.toLowerCase())) {
         addUpdate(`✅ Detected sample word: "${sampleWord}"`);
         ws.send(JSON.stringify({ word: transcript }));
       }
     };
-
+  
     recognition.onerror = (event) => {
       addUpdate(`❌ Error: ${event.error}`);
     };
-
+  
     function startListening() {
       recognition.start();
       addUpdate("🟢 Listening started...");
     }
-
+  
     function stopListening() {
       recognition.stop();
       addUpdate("🔴 Listening stopped.");
     }
-
+  
     // Function to add updates to the live updates section
     function addUpdate(message) {
       const update = document.createElement("p");
       update.textContent = message;
       updatesContainer.appendChild(update);
-
+  
       // Scroll to the bottom of the live updates container
       updatesContainer.scrollTop = updatesContainer.scrollHeight;
     }
