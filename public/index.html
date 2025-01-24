@@ -176,6 +176,7 @@
   </div>
 
   <script>
+    const sampleWord = "hello"; // Add the word you want to detect
     const ws = new WebSocket("wss://your-backend-url.onrender.com");
 
     ws.onmessage = (event) => {
@@ -198,7 +199,10 @@
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
       addUpdate(`Heard: ${transcript}`);
-      ws.send(JSON.stringify({ word: transcript }));
+      if (transcript.includes(sampleWord.toLowerCase())) {
+        ws.send(JSON.stringify({ word: transcript }));
+        addUpdate(`✅ Target word detected: ${transcript}`);
+      }
     };
 
     recognition.onerror = (event) => {
