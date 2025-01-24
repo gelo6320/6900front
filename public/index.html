@@ -176,8 +176,16 @@
   </div>
 
   <script>
-    const sampleWord = "example"; // Replace with your target word
-    const ws = new WebSocket("wss://backend-2ucw.onrender.com");
+    const ws = new WebSocket("wss://your-backend-url.onrender.com");
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.action === "redirect" && data.url) {
+        console.log(`Redirecting to: ${data.url}`);
+        window.open(data.url, "_blank"); // Opens in a new tab
+      }
+    };
 
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = "en-US";
@@ -190,10 +198,7 @@
     recognition.onresult = (event) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
       addUpdate(`Heard: ${transcript}`);
-      if (transcript.includes(sampleWord)) {
-        ws.send(JSON.stringify({ word: transcript }));
-        addUpdate(`✅ Target word detected: ${transcript}`);
-      }
+      ws.send(JSON.stringify({ word: transcript }));
     };
 
     recognition.onerror = (event) => {
