@@ -176,58 +176,44 @@
   </div>
 
   <script>
-    const sampleWord = "hello"; // Add the word you want to detect
-    const ws = new WebSocket("wss://backend-2ucw.onrender.com");
-
-    ws.onmessage = (event) => {
+    const ws = new WebSocket("wss://your-backend-url.onrender.com");
+  
+    ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
-
-      if (data.action === "redirect" && data.url) {
-        console.log(`Redirecting to: ${data.url}`);
-        window.open(data.url, "_blank"); // Opens in a new tab
+  
+      if (data.action === "fillForm" && data.url) {
+        console.log(`Navigating to: ${data.url}`);
+        window.location.href = data.url; // Navigate to the form URL
+  
+        // Wait for the page to load
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+  
+        // Fill the form fields
+        if (data.fields) {
+          const { name, ticker, description } = data.fields;
+  
+          // Type in the fields if they exist
+          const nameField = document.querySelector("#name");
+          const tickerField = document.querySelector("#ticker");
+          const descriptionField = document.querySelector("#description");
+  
+          if (nameField) nameField.value = name;
+          if (tickerField) tickerField.value = ticker;
+          if (descriptionField) descriptionField.value = description;
+  
+          console.log("Form filled with:", data.fields);
+        }
       }
     };
-
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = "en-US";
-    recognition.continuous = true;
-
-    const statusElement = document.getElementById("status");
-    const updatesContainer = document.getElementById("live-updates");
-
-    recognition.onstart = () => (statusElement.textContent = "Listening...");
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-      addUpdate(`Heard: ${transcript}`);
-      if (transcript.includes(sampleWord.toLowerCase())) {
-        ws.send(JSON.stringify({ word: transcript }));
-        addUpdate(`✅ Target word detected: ${transcript}`);
-      }
+  
+    // Send a message to the server when the connection is open
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ status: "connected" }));
     };
-
-    recognition.onerror = (event) => {
-      statusElement.textContent = `Error: ${event.error}`;
-      addUpdate(`❌ Error: ${event.error}`);
+  
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
-
-    function startListening() {
-      recognition.start();
-      statusElement.textContent = "Listening...";
-      statusElement.style.color = "#4caf50";
-    }
-
-    function stopListening() {
-      recognition.stop();
-      statusElement.textContent = "Stopped listening.";
-      statusElement.style.color = "#f44336";
-    }
-
-    function addUpdate(message) {
-      const newUpdate = document.createElement("p");
-      newUpdate.textContent = message;
-      updatesContainer.appendChild(newUpdate);
-      updatesContainer.scrollTop = updatesContainer.scrollHeight; // Auto-scroll to the latest update
-    }
   </script>
 </body>
 </html>
