@@ -181,76 +181,87 @@
     const updatesContainer = document.getElementById("live-updates");
   
     ws.onmessage = async (event) => {
-  const data = JSON.parse(event.data);
-
-  if (data.action === "fillForm" && data.url) {
-    console.log(`Redirecting to: ${data.url}`);
-    window.location.href = data.url; // Redirect to the form URL
-
-    // Wait for the page to load
-    await new Promise((resolve) => setTimeout(resolve, 7000));
-
-    try {
-      console.log("Attempting to fill form fields...");
-
-      // Fill the "name" field
-      const nameField = document.querySelector("input#name");
-      if (nameField) {
-        nameField.value = data.fields.name;
-        nameField.dispatchEvent(new Event("input", { bubbles: true }));
-        console.log("Name field filled:", data.fields.name);
-      } else {
-        console.error("Name field not found!");
+      const data = JSON.parse(event.data);
+  
+      if (data.action === "fillForm" && data.url) {
+        console.log(`Redirecting to: ${data.url}`);
+        window.location.href = data.url; // Redirect to the form URL
+  
+        // Wait for the page to load
+        console.log("Waiting for the page to load...");
+        await new Promise((resolve) => setTimeout(resolve, 7000)); // Increase this delay if needed
+  
+        try {
+          console.log("Attempting to fill form fields...");
+  
+          // Fill the "name" field
+          const nameField = document.querySelector("input#name");
+          if (nameField) {
+            console.log("Name field found!");
+            nameField.value = data.fields.name;
+            nameField.dispatchEvent(new Event("input", { bubbles: true }));
+            console.log(`Name field filled with value: ${data.fields.name}`);
+          } else {
+            console.error("Name field not found!");
+          }
+  
+          // Fill the "ticker" field
+          const tickerField = document.querySelector("input#ticker");
+          if (tickerField) {
+            console.log("Ticker field found!");
+            tickerField.value = data.fields.ticker;
+            tickerField.dispatchEvent(new Event("input", { bubbles: true }));
+            console.log(`Ticker field filled with value: ${data.fields.ticker}`);
+          } else {
+            console.error("Ticker field not found!");
+          }
+  
+          // Fill the "description" field
+          const descriptionField = document.querySelector("textarea#description");
+          if (descriptionField) {
+            console.log("Description field found!");
+            descriptionField.value = data.fields.description;
+            descriptionField.dispatchEvent(new Event("input", { bubbles: true }));
+            console.log(`Description field filled with value: ${data.fields.description}`);
+          } else {
+            console.error("Description field not found!");
+          }
+  
+          // Handle image upload
+          const uploadInput = document.querySelector("input[type='file']");
+          if (uploadInput && data.imagePath) {
+            console.log("Image upload field found!");
+            const blob = await fetch(data.imagePath).then((res) => res.blob());
+            const file = new File([blob], "coin_image.png", { type: blob.type });
+  
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            uploadInput.files = dataTransfer.files;
+            uploadInput.dispatchEvent(new Event("change", { bubbles: true }));
+            console.log("Image uploaded successfully!");
+          } else {
+            if (!uploadInput) {
+              console.error("Image upload field not found!");
+            }
+            if (!data.imagePath) {
+              console.error("Image path is missing in the data object!");
+            }
+          }
+  
+          // Click the "Create Coin" button
+          const createButton = document.querySelector("button#create-coin");
+          if (createButton) {
+            console.log("Create Coin button found!");
+            createButton.click();
+            console.log("Create Coin button clicked!");
+          } else {
+            console.error("Create Coin button not found!");
+          }
+        } catch (error) {
+          console.error("Error during form-filling process:", error);
+        }
       }
-
-      // Fill the "ticker" field
-      const tickerField = document.querySelector("input#ticker");
-      if (tickerField) {
-        tickerField.value = data.fields.ticker;
-        tickerField.dispatchEvent(new Event("input", { bubbles: true }));
-        console.log("Ticker field filled:", data.fields.ticker);
-      } else {
-        console.error("Ticker field not found!");
-      }
-
-      // Fill the "description" field
-      const descriptionField = document.querySelector("textarea#description");
-      if (descriptionField) {
-        descriptionField.value = data.fields.description;
-        descriptionField.dispatchEvent(new Event("input", { bubbles: true }));
-        console.log("Description field filled:", data.fields.description);
-      } else {
-        console.error("Description field not found!");
-      }
-
-      // Handle image upload
-      const uploadInput = document.querySelector("input[type='file']");
-      if (uploadInput && data.imagePath) {
-        const blob = await fetch(data.imagePath).then((res) => res.blob());
-        const file = new File([blob], "coin_image.png", { type: blob.type });
-
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        uploadInput.files = dataTransfer.files;
-        uploadInput.dispatchEvent(new Event("change", { bubbles: true }));
-        console.log("Image uploaded successfully!");
-      } else {
-        console.error("Image upload failed or field not found!");
-      }
-
-      // Click the "Create Coin" button
-      const createButton = document.querySelector("button#create-coin");
-      if (createButton) {
-        createButton.click();
-        console.log("Create Coin button clicked!");
-      } else {
-        console.error("Create Coin button not found!");
-      }
-    } catch (error) {
-      console.error("Error during form-filling process:", error);
-    }
-  }
-};
+    };
   
     // Speech Recognition setup
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -263,20 +274,24 @@
   
       if (transcript.toLowerCase().includes(sampleWord.toLowerCase())) {
         addUpdate(`✅ Detected sample word: "${sampleWord}"`);
+        console.log(`Detected word: "${transcript}". Sending to WebSocket...`);
         ws.send(JSON.stringify({ word: transcript }));
       }
     };
   
     recognition.onerror = (event) => {
       addUpdate(`❌ Error: ${event.error}`);
+      console.error("Speech recognition error:", event.error);
     };
   
     function startListening() {
+      console.log("Starting speech recognition...");
       recognition.start();
       addUpdate("🟢 Listening started...");
     }
   
     function stopListening() {
+      console.log("Stopping speech recognition...");
       recognition.stop();
       addUpdate("🔴 Listening stopped.");
     }
