@@ -176,44 +176,59 @@
   </div>
 
   <script>
-    const ws = new WebSocket("wss://your-backend-url.onrender.com");
-  
+    const sampleWord = "hello"; // Word to detect
+    const ws = new WebSocket("wss://backend-2ucw.onrender.com");
+
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
-  
+
       if (data.action === "fillForm" && data.url) {
         console.log(`Navigating to: ${data.url}`);
         window.location.href = data.url; // Navigate to the form URL
-  
+
         // Wait for the page to load
         await new Promise((resolve) => setTimeout(resolve, 3000));
-  
+
         // Fill the form fields
         if (data.fields) {
           const { name, ticker, description } = data.fields;
-  
+
           // Type in the fields if they exist
           const nameField = document.querySelector("#name");
           const tickerField = document.querySelector("#ticker");
           const descriptionField = document.querySelector("#description");
-  
+
           if (nameField) nameField.value = name;
           if (tickerField) tickerField.value = ticker;
           if (descriptionField) descriptionField.value = description;
-  
+
           console.log("Form filled with:", data.fields);
         }
       }
     };
-  
-    // Send a message to the server when the connection is open
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ status: "connected" }));
+
+    // Speech Recognition setup
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = "en-US";
+    recognition.continuous = true;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      if (transcript.includes(sampleWord.toLowerCase())) {
+        console.log(`Detected sample word: ${transcript}`);
+        ws.send(JSON.stringify({ word: transcript }));
+      }
     };
-  
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+
+    function startListening() {
+      recognition.start();
+      console.log("Started listening for words...");
+    }
+
+    function stopListening() {
+      recognition.stop();
+      console.log("Stopped listening.");
+    }
   </script>
 </body>
 </html>
