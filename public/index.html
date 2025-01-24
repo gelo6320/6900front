@@ -187,21 +187,23 @@
     console.log(`Redirecting to: ${data.url}`);
     window.location.href = data.url; // Redirect to the form URL
 
-    // Wait for the page to load (increase delay if needed)
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // Wait for the page to load
+    await new Promise((resolve) => setTimeout(resolve, 7000));
 
     try {
-      // Fill in the "name" field
+      console.log("Attempting to fill form fields...");
+
+      // Fill the "name" field
       const nameField = document.querySelector("input#name");
       if (nameField) {
         nameField.value = data.fields.name;
-        nameField.dispatchEvent(new Event("input", { bubbles: true })); // Trigger input event
+        nameField.dispatchEvent(new Event("input", { bubbles: true }));
         console.log("Name field filled:", data.fields.name);
       } else {
         console.error("Name field not found!");
       }
 
-      // Fill in the "ticker" field
+      // Fill the "ticker" field
       const tickerField = document.querySelector("input#ticker");
       if (tickerField) {
         tickerField.value = data.fields.ticker;
@@ -211,7 +213,7 @@
         console.error("Ticker field not found!");
       }
 
-      // Fill in the "description" field
+      // Fill the "description" field
       const descriptionField = document.querySelector("textarea#description");
       if (descriptionField) {
         descriptionField.value = data.fields.description;
@@ -230,10 +232,10 @@
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         uploadInput.files = dataTransfer.files;
-        uploadInput.dispatchEvent(new Event("change", { bubbles: true })); // Trigger change event
+        uploadInput.dispatchEvent(new Event("change", { bubbles: true }));
         console.log("Image uploaded successfully!");
       } else {
-        console.error("Image input not found or imagePath is missing!");
+        console.error("Image upload failed or field not found!");
       }
 
       // Click the "Create Coin" button
@@ -245,7 +247,7 @@
         console.error("Create Coin button not found!");
       }
     } catch (error) {
-      console.error("Error filling form:", error);
+      console.error("Error during form-filling process:", error);
     }
   }
 };
